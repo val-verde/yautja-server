@@ -1,0 +1,10 @@
+{
+  "name": "yautja-server",
+  "version": "1.0.0",
+  "description": "Yautja server implementation",
+  "main": "index.js",
+  "repository": "git@github.com:val-verde/yautja-server.git",
+  "author": "Val Verde Inc. <openvalverde@gmail.com>",
+  "license": "MIT",
+  "private": false
+}
