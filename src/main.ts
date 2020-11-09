@@ -1,12 +1,3 @@
-#!/usr/bin/env node
-
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-// @ts-check
-
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
@@ -20,15 +11,14 @@ const remote = require('gulp-remote-retry-src');
 const vfs = require('vinyl-fs');
 const uuid = require('uuid');
 
-const extensions = require('../../build/lib/extensions');
+const extensions = require('../node_modules/vydrach/build/lib/extensions');
 
-const APP_ROOT = path.join(__dirname, '..', '..');
-const BUILTIN_EXTENSIONS_ROOT = path.join(APP_ROOT, 'extensions');
-const BUILTIN_MARKETPLACE_EXTENSIONS_ROOT = path.join(APP_ROOT, '.build', 'builtInExtensions');
-const WEB_DEV_EXTENSIONS_ROOT = path.join(APP_ROOT, '.build', 'builtInWebDevExtensions');
-const WEB_MAIN = path.join(APP_ROOT, 'src', 'vs', 'code', 'browser', 'workbench', 'workbench-dev.html');
-
-const WEB_PLAYGROUND_VERSION = '0.0.9';
+const APP_ROOT = path.join(__dirname, '..');
+const VSCODE_ROOT = path.join(APP_ROOT, 'node_modules', 'vydrach');
+const BUILTIN_EXTENSIONS_ROOT = path.join(VSCODE_ROOT, 'extensions');
+const BUILTIN_MARKETPLACE_EXTENSIONS_ROOT = path.join(VSCODE_ROOT, '.build', 'builtInExtensions');
+const WEB_DEV_EXTENSIONS_ROOT = path.join(APP_ROOT, 'app');
+const WEB_MAIN = path.join(APP_ROOT, 'src', 'yautja-ui.html');
 
 const args = minimist(process.argv, {
 	boolean: [
@@ -79,76 +69,47 @@ const AUTHORITY = process.env.VSCODE_AUTHORITY || `${HOST}:${PORT}`;
 const exists = (path) => util.promisify(fs.exists)(path);
 const readFile = (path) => util.promisify(fs.readFile)(path);
 
-async function getBuiltInExtensionInfos() {
+async function getBuiltInExtensionInfos(): Promise<{extensions: any[];
+                                                    locations: object;}> {
 	const allExtensions = [];
 	/** @type {Object.<string, string>} */
 	const locations = {};
-
 	const [localExtensions, marketplaceExtensions, webDevExtensions] = await Promise.all([
 		extensions.scanBuiltinExtensions(BUILTIN_EXTENSIONS_ROOT),
 		extensions.scanBuiltinExtensions(BUILTIN_MARKETPLACE_EXTENSIONS_ROOT),
-		ensureWebDevExtensions().then(() => extensions.scanBuiltinExtensions(WEB_DEV_EXTENSIONS_ROOT))
+		extensions.scanBuiltinExtensions(WEB_DEV_EXTENSIONS_ROOT)
 	]);
+
 	for (const ext of localExtensions) {
 		allExtensions.push(ext);
 		locations[ext.extensionPath] = path.join(BUILTIN_EXTENSIONS_ROOT, ext.extensionPath);
 	}
+
 	for (const ext of marketplaceExtensions) {
 		allExtensions.push(ext);
 		locations[ext.extensionPath] = path.join(BUILTIN_MARKETPLACE_EXTENSIONS_ROOT, ext.extensionPath);
 	}
+
 	for (const ext of webDevExtensions) {
-		allExtensions.push(ext);
+        allExtensions.push(ext);
 		locations[ext.extensionPath] = path.join(WEB_DEV_EXTENSIONS_ROOT, ext.extensionPath);
 	}
+
 	for (const ext of allExtensions) {
 		if (ext.packageJSON.browser) {
 			let mainFilePath = path.join(locations[ext.extensionPath], ext.packageJSON.browser);
+
 			if (path.extname(mainFilePath) !== '.js') {
 				mainFilePath += '.js';
 			}
+
 			if (!await exists(mainFilePath)) {
 				fancyLog(`${ansiColors.red('Error')}: Could not find ${mainFilePath}. Use ${ansiColors.cyan('yarn watch-web')} to build the built-in extensions.`);
 			}
 		}
 	}
+
 	return { extensions: allExtensions, locations };
-}
-
-async function ensureWebDevExtensions() {
-
-	// Playground (https://github.com/microsoft/vscode-web-playground)
-	const webDevPlaygroundRoot = path.join(WEB_DEV_EXTENSIONS_ROOT, 'vscode-web-playground');
-	const webDevPlaygroundExists = await exists(webDevPlaygroundRoot);
-
-	let downloadPlayground = false;
-	if (webDevPlaygroundExists) {
-		try {
-			const webDevPlaygroundPackageJson = JSON.parse(((await readFile(path.join(webDevPlaygroundRoot, 'package.json'))).toString()));
-			if (webDevPlaygroundPackageJson.version !== WEB_PLAYGROUND_VERSION) {
-				downloadPlayground = true;
-			}
-		} catch (error) {
-			downloadPlayground = true;
-		}
-	} else {
-		downloadPlayground = true;
-	}
-
-	if (downloadPlayground) {
-		if (args.verbose) {
-			fancyLog(`${ansiColors.magenta('Web Development extensions')}: Downloading vscode-web-playground to ${webDevPlaygroundRoot}`);
-		}
-		await new Promise((resolve, reject) => {
-			remote(['package.json', 'dist/extension.js', 'dist/extension.js.map'], {
-				base: 'https://raw.githubusercontent.com/microsoft/vscode-web-playground/main/'
-			}).pipe(vfs.dest(webDevPlaygroundRoot)).on('end', resolve).on('error', reject);
-		});
-	} else {
-		if (args.verbose) {
-			fancyLog(`${ansiColors.magenta('Web Development extensions')}: Using existing vscode-web-playground in ${webDevPlaygroundRoot}`);
-		}
-	}
 }
 
 async function getCommandlineProvidedExtensionInfos() {
@@ -214,7 +175,7 @@ const server = http.createServer((req, res) => {
 	try {
 		if (pathname === '/favicon.ico') {
 			// favicon
-			return serveFile(req, res, path.join(APP_ROOT, 'resources', 'win32', 'code.ico'));
+            return serveFile(req, res, path.join(VSCODE_ROOT, 'resources', 'win32', 'code.ico'));
 		}
 		if (pathname === '/manifest.json') {
 			// manifest
@@ -272,7 +233,6 @@ server.on('error', err => {
  * @param {import('url').UrlWithParsedQuery} parsedUrl
  */
 async function handleStatic(req, res, parsedUrl) {
-
 	if (/^\/static\/extensions\//.test(parsedUrl.pathname)) {
 		const relativePath = decodeURIComponent(parsedUrl.pathname.substr('/static/extensions/'.length));
 		const filePath = getExtensionFilePath(relativePath, (await builtInExtensionsPromise).locations);
@@ -288,7 +248,11 @@ async function handleStatic(req, res, parsedUrl) {
 	// Strip `/static/` from the path
 	const relativeFilePath = path.normalize(decodeURIComponent(parsedUrl.pathname.substr('/static/'.length)));
 
-	return serveFile(req, res, path.join(APP_ROOT, relativeFilePath));
+	if (/^\/static\/node_modules\//.test(parsedUrl.pathname)) {
+	    return serveFile(req, res, path.join(APP_ROOT, relativeFilePath));
+    }
+
+	return serveFile(req, res, path.join(VSCODE_ROOT, relativeFilePath));
 }
 
 /**
@@ -314,7 +278,7 @@ async function handleExtension(req, res, parsedUrl) {
  * @param {import('http').ServerResponse} res
  */
 async function handleRoot(req, res) {
-	let folderUri = { scheme: 'memfs', path: `/sample-folder` };
+	let folderUri = { scheme: 'memfs', authority: null, path: `/sample-folder` };
 
 	const match = req.url && req.url.match(/\?([^#]+)/);
 	if (match) {
@@ -366,7 +330,9 @@ async function handleRoot(req, res) {
 		folderUri: folderUri,
 		staticExtensions,
 		enableSyncByDefault: args['enable-sync'],
+		_wrapWebWorkerExtHostInIframe: false,
 	};
+
 	if (args['wrap-iframe']) {
 		webConfigJSON._wrapWebWorkerExtHostInIframe = true;
 	}
@@ -431,7 +397,7 @@ async function handleCallback(req, res, parsedUrl) {
 
 	// add to map of known callbacks
 	mapCallbackUriToRequestId.set(requestId, JSON.stringify({ scheme: vscodeScheme || 'code-oss', authority: vscodeAuthority, path: vscodePath, query, fragment: vscodeFragment }));
-	return serveFile(req, res, path.join(APP_ROOT, 'resources', 'web', 'callback.html'), { 'Content-Type': 'text/html' });
+	return serveFile(req, res, path.join(VSCODE_ROOT, 'resources', 'web', 'callback.html'), { 'Content-Type': 'text/html' });
 }
 
 /**
