@@ -278,7 +278,7 @@ async function handleExtension(req, res, parsedUrl) {
  * @param {import('http').ServerResponse} res
  */
 async function handleRoot(req, res) {
-	let folderUri = { scheme: 'memfs', authority: null, path: `/sample-folder` };
+	let folderUri = { scheme: 'yautjafs', authority: null, path: `/sample-folder` };
 
 	const match = req.url && req.url.match(/\?([^#]+)/);
 	if (match) {
