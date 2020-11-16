@@ -8,6 +8,7 @@ const minimist = require('minimist');
 const fancyLog = require('fancy-log');
 const ansiColors = require('ansi-colors');
 const remote = require('gulp-remote-retry-src');
+const socket = require('socket.io');
 const vfs = require('vinyl-fs');
 const uuid = require('uuid');
 
@@ -213,6 +214,20 @@ const server = http.createServer((req, res) => {
 
 		return serveError(req, res, 500, 'Internal Server Error.');
 	}
+});
+
+let io = socket(server);
+
+io.on('connection', function(socket) {
+   console.log('FS client connected');
+
+   socket.on('disconnect', function () {
+      console.log('FS client disconnected');
+   });
+
+   socket.on('fs', function (message) {
+      console.log(message);
+   });
 });
 
 server.listen(LOCAL_PORT, () => {
