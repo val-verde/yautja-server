@@ -42,8 +42,8 @@ const args = minimist(process.argv, {
 
 if (args.help) {
 	console.log(
-		'yarn web [options]\n' +
-		' --no-launch      Do not open VSCode web in the browser\n' +
+		'yarn yautja-server [options]\n' +
+		' --no-launch      Do not open in the browser\n' +
 		' --wrap-iframe    Wrap the Web Worker Extension Host in an iframe\n' +
 		' --trusted-types  Enable trusted types (report only)\n' +
 		' --enable-sync    Enable sync by default\n' +
@@ -56,7 +56,7 @@ if (args.help) {
 		' --verbose        Print out more information\n' +
 		' --help\n' +
 		'[Example]\n' +
-		' yarn web --scheme https --host example.com --port 8080 --local_port 30000'
+		' yarn yautja-server --scheme https --host example.com --port 8080 --local_port 30000'
 	);
 	process.exit(0);
 }
