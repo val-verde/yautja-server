@@ -182,8 +182,8 @@ const server = http.createServer((req, res) => {
 			// manifest
 			res.writeHead(200, { 'Content-Type': 'application/json' });
 			return res.end(JSON.stringify({
-				'name': 'Code Web - OSS',
-				'short_name': 'Code Web - OSS',
+				'name': 'Vydrach Web',
+				'short_name': 'Vydrach Web',
 				'start_url': '/',
 				'lang': 'en-US',
 				'display': 'standalone'
@@ -234,7 +234,7 @@ server.listen(LOCAL_PORT, () => {
 	if (LOCAL_PORT !== PORT) {
 		console.log(`Operating location at http://0.0.0.0:${LOCAL_PORT}`);
 	}
-	console.log(`Web UI available at   ${SCHEME}://${AUTHORITY}`);
+	console.log(`Vydrach Web UI available at   ${SCHEME}://${AUTHORITY}`);
 });
 
 server.on('error', err => {
@@ -411,7 +411,7 @@ async function handleCallback(req, res, parsedUrl) {
 
 
 	// add to map of known callbacks
-	mapCallbackUriToRequestId.set(requestId, JSON.stringify({ scheme: vscodeScheme || 'code-oss', authority: vscodeAuthority, path: vscodePath, query, fragment: vscodeFragment }));
+	mapCallbackUriToRequestId.set(requestId, JSON.stringify({ scheme: vscodeScheme || 'vydrach', authority: vscodeAuthority, path: vscodePath, query, fragment: vscodeFragment }));
 	return serveFile(req, res, path.join(VSCODE_ROOT, 'resources', 'web', 'callback.html'), { 'Content-Type': 'text/html' });
 }
 
