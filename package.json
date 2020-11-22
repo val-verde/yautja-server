@@ -26,7 +26,7 @@
     "socket.io": "^3.0.0",
     "typescript": "^4.1.0-dev.20200924",
     "vinyl-fs": "^3.0.0",
-    "vydrach": "https://github.com/val-verde/vydrach.git",
-    "yautja": "https://github.com/val-verde/yautja.git"
+    "vydrach": "https://github.com/val-verde/vydrach.git#v1.0.0",
+    "yautja": "https://github.com/val-verde/yautja.git#v1.0.0"
   }
 }
